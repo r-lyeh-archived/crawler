@@ -1,0 +1,1 @@
+add_subdirectory(glxw EXCLUDE_FROM_ALL)

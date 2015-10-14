@@ -1,0 +1,1 @@
+../obj-viewer/gouraud-shading.f.glsl

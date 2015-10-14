@@ -1,0 +1,5 @@
+VLIQ is a tiny header-only vector library inspired by the Quake III source code.
+
+To use VLIQ, simply
+
+	#include "vliq.h"

@@ -1,0 +1,76 @@
+Notes:
+
+- Not using textures because textures are distorted to map the object
+  on which they are attached.  Typically they would look like a flat
+  TV screen - but we're talking about PORTALS here!
+
+- Do not confuse with (quad-? oc-?)tree portals.
+
+- Concept: scene is rendered twice
+  - Once as if the player were already teleported, clipped to the portal's boundaries
+  - Once normally
+
+- First one-way (portal1->portal2) display, then two-ways
+  (portal1<->portal2)
+
+- Enable back-face culling
+
+- Portal collision detection using:
+  http://en.wikipedia.org/wiki/Line-plane_intersection
+
+  Matrix initialization: each glm::vec3 is a _column_ vector, so the
+  values are rotated compared to the mathematic notation.
+
+  It's tempting to work in View coordinates, but if you want to
+  teleport objects later on (a cube?...), you'll need to work in
+  object coordinates anyway.
+
+- Recursive portals: restoring the stencil buffer after a sub-portal
+  has cleared it is difficult: OpenGL ES does not provide a way to
+  read (backup) the stencil buffer, so we have to rebuild it each
+  time we come back from a sub-rendering process.
+
+- Camera frustrum makes it possible to see behind the portal before
+  crossing it (i.e. overwrite the portal contents with what's behind).
+
+  One solution: make the portal thick, with thickness ~= zNear (from
+  glm::perspective).
+
+  - Additional issue when drawing the stencil buffer: instead of a
+    single plane, we now draw a volumetric object, composed a several
+    superposed layers.  Some parts of the stencil buffer will be drawn
+    twice, which means our stencil test function need to be even more
+    carefully designed.
+
+    We could use the depth buffer to try and avoid multiple writes.
+    However this means we have to order the faces, and also clear the
+    depth buffer between each step of the algorithm.  We didn't try,
+    but it sounds unlikely to get good performances.
+
+  Another solution: teleport ahead of time.  Need to support two
+  teleport planes parallel to the portal, each one-way only.
+  Anticipate issues with collision detections and the like, since the
+  player will technically be teleported slightly _behind_ the other
+  portal.  But above all, it wouldn't deal with strifing: the camera
+  frustum will intersect the portal at a point, and will see "behind"
+  no matter what.
+
+- Optimization: clip the portal before using the stencil buffer (more
+  expensive).  One difficulty is clipping when the camera frustum
+  intersects with the plane, resulting in projection from the back of
+  the camera.  We can also clip recursively to get a chance to ditch
+  sub-portal rendering if it's not visible from the main portal.
+
+- [/] View through portal
+  - [X] Stencil in rectangle
+  - [/] Stencil in plane intersection - strife through portals - avoid flicker when traversing portals
+    - [ ] Recreate portal shape on window resize
+- [X] Collision detection
+- [/] Warp
+  - [ ] Reposition body/head so the controls (turn left/right...) work on the right axis again
+- [/] Infinite/recursive portals display (portals facing each others)
+- [ ] Object at 2 locations at the same time (duplicate objects?)
+  - Solve problem with objects too close to the portal and the portal
+    displays facing culling artifacts
+- [X] Optimisation (Clipping? Low-res rendering for recursive portals?)
+- [ ] (later) Physics

@@ -1,0 +1,1 @@
+cl %* /MT *.cpp -I ..\..\ -I ..\glew -I ..\..\..\..\frameworks\SDL2\include  -DMICROPROFILE_WEBSERVER=1 -DMICROPROFILE_UI=1 ws2_32.lib advapi32.lib winmm.lib ..\glew\glew.c -DGLEW_STATIC opengl32.lib ..\..\..\..\frameworks\SDL2\lib\x86\SDL2.lib && copy ..\..\..\..\frameworks\SDL2\lib\x86\SDL2.dll /y 

@@ -1,0 +1,11 @@
+Very simple marching cubes example.
+
+Depends on GLUT, GL, GLU and a C++11 compiler.
+
+Run ./compile.bash, enjoy!
+
+- LMB and drag mouse to rotate the camera, WASD to move the camera.
+- RMB to open a menu with flat/smooth shading options.
+
+
+Public domain.

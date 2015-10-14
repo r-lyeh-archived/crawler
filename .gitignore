@@ -1,0 +1,38 @@
+# Compiled Object files
+apps/*/*.o
+apps/*/*.lo
+apps/*/*.slo
+apps/*/*.obj
+apps/*/*.ilk
+apps/*/*.pdb
+apps/*/*.suo
+apps/*/*.dll
+examples/*/*.o
+examples/*/*.lo
+examples/*/*.slo
+examples/*/*.obj
+examples/*/*.ilk
+examples/*/*.pdb
+examples/*/*.suo
+examples/*/*.dll
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Auto-generated files
+/.build
+/.code
+/.data
+/.pack
+
