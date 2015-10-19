@@ -34,5 +34,16 @@ echo [ OK ] Generating licenses...
 premake5 --gen-licenses > nul
 echo [ OK ] Generating projects...
 premake5 vs2013 1> nul 2> nul
-echo [ OK ] Running solution...
-start .prj\crawler.sln
+
+if /i "%1" == "make" (
+    msbuild .prj\crawler.sln
+    exit /b
+)
+
+2>nul 1>nul move .prj\crawler.sdf .prj\crawler2.sdf && (
+    echo [ OK ] Running solution...
+    start .prj\crawler.sln
+) || (
+    echo [ OK ] Refreshed solution...
+)
+
