@@ -1,20 +1,31 @@
+/*
+    nanogui/button.h -- [Normal/Toggle/Radio/Popup] Button widget
+
+    NanoGUI was developed by Wenzel Jakob <wenzel@inf.ethz.ch>.
+    The widget drawing code is based on the NanoVG demo application
+    by Mikko Mononen.
+
+    All rights reserved. Use of this source code is governed by a
+    BSD-style license that can be found in the LICENSE.txt file.
+*/
+
 #pragma once
 
 #include <nanogui/widget.h>
 
-NANOGUI_NAMESPACE_BEGIN
+NAMESPACE_BEGIN(nanogui)
 
 class NANOGUI_EXPORT Button : public Widget {
 public:
     /// Flags to specify the button behavior (can be combined with binary OR)
-    enum ButtonFlags {
+    enum Flags {
         NormalButton = 1,
         RadioButton  = 2,
         ToggleButton = 4,
         PopupButton  = 8
     };
 
-    enum IconPosition {
+    enum class IconPosition {
         Left,
         LeftCentered,
         RightCentered,
@@ -35,11 +46,8 @@ public:
     int icon() const { return mIcon; }
     void setIcon(int icon) { mIcon = icon; }
 
-    int buttonFlags() const { return mButtonFlags; }
-    void setButtonFlags(int buttonFlags) { mButtonFlags = buttonFlags; }
-
-    int fontSize() const { return mFontSize; }
-    void setFontSize(int fontSize) { mFontSize = fontSize; }
+    int flags() const { return mFlags; }
+    void setFlags(int buttonFlags) { mFlags = buttonFlags; }
 
     IconPosition iconPosition() const { return mIconPosition; }
     void setIconPosition(IconPosition iconPosition) { mIconPosition = iconPosition; }
@@ -49,11 +57,11 @@ public:
 
     /// Set the push callback (for any type of button)
     std::function<void()> callback() const { return mCallback; }
-    void setCallback(std::function<void()> callback) { mCallback = callback; }
+    void setCallback(const std::function<void()> &callback) { mCallback = callback; }
 
     /// Set the change callback (for toggle buttons)
     std::function<void(bool)> changeCallback() const { return mChangeCallback; }
-    void setChangeCallback(std::function<void(bool)> callback) { mChangeCallback = callback; }
+    void setChangeCallback(const std::function<void(bool)> &callback) { mChangeCallback = callback; }
 
     /// Set the button group (for radio buttons)
     void setButtonGroup(const std::vector<Button *> &buttonGroup) { mButtonGroup = buttonGroup; }
@@ -67,13 +75,12 @@ protected:
     int mIcon;
     IconPosition mIconPosition;
     bool mPushed;
-    int mButtonFlags;
+    int mFlags;
     Color mBackgroundColor;
     Color mTextColor;
     std::function<void()> mCallback;
     std::function<void(bool)> mChangeCallback;
     std::vector<Button *> mButtonGroup;
-    int mFontSize;
 };
 
-NANOGUI_NAMESPACE_END
+NAMESPACE_END(nanogui)

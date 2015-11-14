@@ -1,3 +1,14 @@
+/*
+    src/widget.cpp -- Base class of all widgets
+
+    NanoGUI was developed by Wenzel Jakob <wenzel@inf.ethz.ch>.
+    The widget drawing code is based on the NanoVG demo application
+    by Mikko Mononen.
+
+    All rights reserved. Use of this source code is governed by a
+    BSD-style license that can be found in the LICENSE.txt file.
+*/
+
 #include <nanogui/widget.h>
 #include <nanogui/layout.h>
 #include <nanogui/theme.h>
@@ -5,7 +16,7 @@
 #include <nanogui/opengl.h>
 #include <nanogui/screen.h>
 
-NANOGUI_NAMESPACE_BEGIN
+NAMESPACE_BEGIN(nanogui)
 
 Widget::Widget(Widget *parent)
     : mParent(nullptr), mTheme(nullptr), mLayout(nullptr),
@@ -20,9 +31,10 @@ Widget::Widget(Widget *parent)
 }
 
 Widget::~Widget() {
-    for (auto child : mChildren)
-        delete child;
-    delete mLayout;
+    for (auto child : mChildren) {
+        if (child)
+            child->decRef();
+    }
 }
 
 int Widget::fontSize() const {
@@ -116,13 +128,25 @@ bool Widget::keyboardEvent(int, int, int, int) {
     return false;
 }
 
-bool Widget::keyboardEvent(unsigned int) {
+bool Widget::keyboardCharacterEvent(unsigned int) {
     return false;
 }
 
 void Widget::addChild(Widget *widget) {
     mChildren.push_back(widget);
+    widget->incRef();
     widget->setParent(this);
+}
+
+void Widget::removeChild(const Widget *widget) {
+    mChildren.erase(std::remove(mChildren.begin(), mChildren.end(), widget), mChildren.end());
+    widget->decRef();
+}
+
+void Widget::removeChild(int index) {
+    Widget *widget = mChildren[index];
+    mChildren.erase(mChildren.begin() + index);
+    widget->decRef();
 }
 
 Window *Widget::window() {
@@ -164,4 +188,4 @@ void Widget::draw(NVGcontext *ctx) {
     nvgTranslate(ctx, -mPos.x(), -mPos.y());
 }
 
-NANOGUI_NAMESPACE_END
+NAMESPACE_END(nanogui)

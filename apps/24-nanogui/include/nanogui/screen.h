@@ -1,8 +1,21 @@
+/*
+    nanogui/screen.h -- Top-level widget and interface between NanoGUI and GLFW
+
+    A significant redesign of this code was contributed by Christian Schueller.
+
+    NanoGUI was developed by Wenzel Jakob <wenzel@inf.ethz.ch>.
+    The widget drawing code is based on the NanoVG demo application
+    by Mikko Mononen.
+
+    All rights reserved. Use of this source code is governed by a
+    BSD-style license that can be found in the LICENSE.txt file.
+*/
+
 #pragma once
 
 #include <nanogui/widget.h>
 
-NANOGUI_NAMESPACE_BEGIN
+NAMESPACE_BEGIN(nanogui)
 
 /**
  * \brief Represents a display surface (i.e. a full-screen or windowed GLFW window)
@@ -18,9 +31,6 @@ public:
 
     /// Release all resources
     virtual ~Screen();
-
-    /// Draw the Screen contents
-    virtual void drawAll();
 
     /// Get the window titlebar caption
     const std::string &caption() const { return mCaption; }
@@ -40,12 +50,12 @@ public:
     /// Set window size
     void setSize(const Vector2i& size);
 
+    /// Draw the Screen contents
+    virtual void drawAll();
+
     /// Draw the window contents -- put your OpenGL draw calls here
     virtual void drawContents() { /* To be overridden */ }
 
-    /// Invoked when the window is resized
-    virtual void framebufferSizeChanged() { /* To be overridden */ }
-    
     /// Handle a file drop event
     virtual bool dropEvent(const std::vector<std::string> & /* filenames */) { return false; /* To be overridden */ }
 
@@ -53,18 +63,30 @@ public:
     virtual bool keyboardEvent(int key, int scancode, int action, int modifiers);
 
     /// Text input event handler: codepoint is native endian UTF-32 format
-    virtual bool keyboardEvent(unsigned int codepoint);
+    virtual bool keyboardCharacterEvent(unsigned int codepoint);
+
+    /// Window resize event handler
+    virtual bool resizeEvent(const Vector2i &) { return false; }
 
     /// Return the last observed mouse position value
     Vector2i mousePos() const { return mMousePos; }
 
     /// Return a pointer to the underlying GLFW window data structure
     GLFWwindow *glfwWindow() { return mGLFWWindow; }
-    
+
     /// Return a pointer to the underlying nanoVG draw context
     NVGcontext *nvgContext() { return mNVGContext; }
 
-protected:
+    void setShutdownGLFWOnDestruct(bool v) { mShutdownGLFWOnDestruct = v; }
+    bool shutdownGLFWOnDestruct() { return mShutdownGLFWOnDestruct; }
+
+    /// Compute the layout of all widgets
+    void performLayout() {
+        Widget::performLayout(mNVGContext);
+    }
+public:
+    /********* API for applications which manage GLFW themselves *********/
+
     /**
      * \brief Default constructor
      *
@@ -80,7 +102,7 @@ protected:
     Screen();
 
     /// Initialize the \ref Screen
-    void initialize(GLFWwindow *window);
+    void initialize(GLFWwindow *window, bool shutdownGLFWOnDestruct);
 
     /* Event handlers */
     bool cursorPosCallbackEvent(double x, double y);
@@ -89,6 +111,7 @@ protected:
     bool charCallbackEvent(unsigned int codepoint);
     bool dropCallbackEvent(int count, const char **filenames);
     bool scrollCallbackEvent(double x, double y);
+    bool resizeCallbackEvent(int width, int height);
 
     /* Internal helper functions */
     void updateFocus(Widget *widget);
@@ -96,6 +119,10 @@ protected:
     void centerWindow(Window *window);
     void moveWindowToFront(Window *window);
     void drawWidgets();
+
+    void performLayout(NVGcontext *ctx) {
+        Widget::performLayout(ctx);
+    }
 
 protected:
     GLFWwindow *mGLFWWindow;
@@ -113,6 +140,7 @@ protected:
     bool mProcessEvents;
     Vector3f mBackground;
     std::string mCaption;
+    bool mShutdownGLFWOnDestruct;
 };
 
-NANOGUI_NAMESPACE_END
+NAMESPACE_END(nanogui)

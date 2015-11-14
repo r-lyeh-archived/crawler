@@ -1,22 +1,39 @@
+/*
+    src/window.cpp -- Top-level window widget
+
+    NanoGUI was developed by Wenzel Jakob <wenzel@inf.ethz.ch>.
+    The widget drawing code is based on the NanoVG demo application
+    by Mikko Mononen.
+
+    All rights reserved. Use of this source code is governed by a
+    BSD-style license that can be found in the LICENSE.txt file.
+*/
+
 #include <nanogui/window.h>
 #include <nanogui/theme.h>
 #include <nanogui/opengl.h>
 #include <nanogui/screen.h>
+#include <iostream>
 
-NANOGUI_NAMESPACE_BEGIN
+NAMESPACE_BEGIN(nanogui)
 
 Window::Window(Widget *parent, const std::string &title)
-    : Widget(parent), mTitle(title), mModal(false), mDispose(false) { }
+    : Widget(parent), mTitle(title), mModal(false), mDrag(false) { }
+
+Vector2i Window::preferredSize(NVGcontext *ctx) const {
+    Vector2i result = Widget::preferredSize(ctx);
+
+    nvgFontSize(ctx, 18.0f);
+    nvgFontFace(ctx, "sans-bold");
+    float bounds[4];
+    nvgTextBounds(ctx, 0, 0, mTitle.c_str(), nullptr, bounds);
+
+    return result.cwiseMax(Vector2i(
+        bounds[2]-bounds[0] + 20, bounds[3]-bounds[1]
+    ));
+}
 
 void Window::draw(NVGcontext *ctx) {
-    if (mDispose) {
-        Widget *widget = this;
-        while (widget->parent())
-            widget = widget->parent();
-        ((Screen *) widget)->disposeWindow(this);
-        return;
-    }
-
     int ds = mTheme->mWindowDropShadowSize, cr = mTheme->mWindowCornerRadius;
     int hh = mTheme->mWindowHeaderHeight;
 
@@ -89,9 +106,10 @@ void Window::draw(NVGcontext *ctx) {
 }
 
 void Window::dispose() {
-    /* Dispose window at next draw call (don't do it right away, since
-       the data structures may still be needed to finish event handling) */
-    mDispose = true;
+    Widget *widget = this;
+    while (widget->parent())
+        widget = widget->parent();
+    ((Screen *) widget)->disposeWindow(this);
 }
 
 void Window::center() {
@@ -101,18 +119,25 @@ void Window::center() {
     ((Screen *) widget)->centerWindow(this);
 }
 
-bool Window::mouseDragEvent(const Vector2i &p, const Vector2i &rel,
-                            int /* button */, int /* modifiers */) {
-    if ((p.y() - mPos.y() - rel.y()) < mTheme->mWindowHeaderHeight) {
+bool Window::mouseDragEvent(const Vector2i &, const Vector2i &rel,
+                            int button, int /* modifiers */) {
+    if (mDrag && (button & (1 << GLFW_MOUSE_BUTTON_1)) != 0) {
         mPos += rel;
+        mPos = mPos.cwiseMax(Vector2i::Zero());
+        mPos = mPos.cwiseMin(parent()->size() - mSize);
         return true;
     }
     return false;
 }
 
 bool Window::mouseButtonEvent(const Vector2i &p, int button, bool down, int modifiers) {
-    Widget::mouseButtonEvent(p, button, down, modifiers);
-    return true;
+    if (Widget::mouseButtonEvent(p, button, down, modifiers))
+        return true;
+    if (button == GLFW_MOUSE_BUTTON_1) {
+        mDrag = down && (p.y() - mPos.y()) < mTheme->mWindowHeaderHeight;
+        return true;
+    }
+    return false;
 }
 
 bool Window::scrollEvent(const Vector2i &p, const Vector2f &rel) {
@@ -124,4 +149,4 @@ void Window::refreshRelativePlacement() {
     /* Overridden in \ref Popup */
 }
 
-NANOGUI_NAMESPACE_END
+NAMESPACE_END(nanogui)

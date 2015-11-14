@@ -1,10 +1,27 @@
+/*
+    nanogui/theme.h -- Storage class for basic theme-related properties
+
+    The text box widget was contributed by Christian Schueller.
+
+    NanoGUI was developed by Wenzel Jakob <wenzel@inf.ethz.ch>.
+    The widget drawing code is based on the NanoVG demo application
+    by Mikko Mononen.
+
+    All rights reserved. Use of this source code is governed by a
+    BSD-style license that can be found in the LICENSE.txt file.
+*/
+
 #pragma once
 
 #include <nanogui/common.h>
+#include <nanogui/object.h>
 
-NANOGUI_NAMESPACE_BEGIN
+NAMESPACE_BEGIN(nanogui)
 
-struct NANOGUI_EXPORT Theme {
+class NANOGUI_EXPORT Theme : public Object {
+public:
+    Theme(NVGcontext *ctx);
+
     /* Fonts */
     int mFontNormal;
     int mFontBold;
@@ -13,6 +30,7 @@ struct NANOGUI_EXPORT Theme {
     /* Spacing-related parameters */
     int mStandardFontSize;
     int mButtonFontSize;
+    int mTextBoxFontSize;
     int mWindowCornerRadius;
     int mWindowHeaderHeight;
     int mWindowDropShadowSize;
@@ -50,8 +68,8 @@ struct NANOGUI_EXPORT Theme {
 
     Color mWindowPopup;
     Color mWindowPopupTransparent;
-
-    Theme(NVGcontext *ctx);
+protected:
+    virtual ~Theme() { };
 };
 
-NANOGUI_NAMESPACE_END
+NAMESPACE_END(nanogui)

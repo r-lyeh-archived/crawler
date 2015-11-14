@@ -1,8 +1,20 @@
+/*
+    nanogui/imagepanel.h -- Image panel widget which shows a number of
+    square-shaped icons
+
+    NanoGUI was developed by Wenzel Jakob <wenzel@inf.ethz.ch>.
+    The widget drawing code is based on the NanoVG demo application
+    by Mikko Mononen.
+
+    All rights reserved. Use of this source code is governed by a
+    BSD-style license that can be found in the LICENSE.txt file.
+*/
+
 #pragma once
 
 #include <nanogui/widget.h>
 
-NANOGUI_NAMESPACE_BEGIN
+NAMESPACE_BEGIN(nanogui)
 
 class NANOGUI_EXPORT ImagePanel : public Widget {
 public:
@@ -10,11 +22,11 @@ public:
 public:
     ImagePanel(Widget *parent);
 
-    void setImageData(const std::vector<std::pair<int, std::string>> &data) { mImages = data; }
+    void setImages(const Images &data) { mImages = data; }
     const Images& images() const { return mImages; }
 
     std::function<void(int)> callback() const { return mCallback; }
-    void setCallback(std::function<void(int)> callback) { mCallback = callback; }
+    void setCallback(const std::function<void(int)> &callback) { mCallback = callback; }
 
     virtual bool mouseMotionEvent(const Vector2i &p, const Vector2i &rel, int button, int modifiers);
     virtual bool mouseButtonEvent(const Vector2i &p, int button, bool down, int modifiers);
@@ -32,4 +44,4 @@ protected:
     int mMouseIndex;
 };
 
-NANOGUI_NAMESPACE_END
+NAMESPACE_END(nanogui)

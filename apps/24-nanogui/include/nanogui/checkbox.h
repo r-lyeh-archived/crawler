@@ -1,8 +1,19 @@
+/*
+    nanogui/checkbox.h -- Two-state check box widget
+
+    NanoGUI was developed by Wenzel Jakob <wenzel@inf.ethz.ch>.
+    The widget drawing code is based on the NanoVG demo application
+    by Mikko Mononen.
+
+    All rights reserved. Use of this source code is governed by a
+    BSD-style license that can be found in the LICENSE.txt file.
+*/
+
 #pragma once
 
 #include <nanogui/widget.h>
 
-NANOGUI_NAMESPACE_BEGIN
+NAMESPACE_BEGIN(nanogui)
 
 class NANOGUI_EXPORT CheckBox : public Widget {
 public:
@@ -19,7 +30,7 @@ public:
     void setPushed(const bool &pushed) { mPushed = pushed; }
 
     std::function<void(bool)> callback() const { return mCallback; }
-    void setCallback(std::function<void(bool)> callback) { mCallback = callback; }
+    void setCallback(const std::function<void(bool)> &callback) { mCallback = callback; }
 
     virtual bool mouseButtonEvent(const Vector2i &p, int button, bool down, int modifiers);
     virtual Vector2i preferredSize(NVGcontext *ctx) const;
@@ -30,4 +41,4 @@ protected:
     std::function<void(bool)> mCallback;
 };
 
-NANOGUI_NAMESPACE_END
+NAMESPACE_END(nanogui)

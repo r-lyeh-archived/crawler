@@ -1,8 +1,19 @@
+/*
+    nanogui/window.h -- Top-level window widget
+
+    NanoGUI was developed by Wenzel Jakob <wenzel@inf.ethz.ch>.
+    The widget drawing code is based on the NanoVG demo application
+    by Mikko Mononen.
+
+    All rights reserved. Use of this source code is governed by a
+    BSD-style license that can be found in the LICENSE.txt file.
+*/
+
 #pragma once
 
 #include <nanogui/widget.h>
 
-NANOGUI_NAMESPACE_BEGIN
+NAMESPACE_BEGIN(nanogui)
 
 class NANOGUI_EXPORT Window : public Widget {
     friend class Popup;
@@ -34,13 +45,15 @@ public:
     virtual bool mouseButtonEvent(const Vector2i &p, int button, bool down, int modifiers);
     /// Accept scroll events and propagate them to the widget under the mouse cursor
     virtual bool scrollEvent(const Vector2i &p, const Vector2f &rel);
+    /// Compute the preferred size of the widget
+    virtual Vector2i preferredSize(NVGcontext *ctx) const;
 protected:
     /// Internal helper function to maintain nested window position values; overridden in \ref Popup
     virtual void refreshRelativePlacement();
 protected:
     std::string mTitle;
     bool mModal;
-    bool mDispose;
+    bool mDrag;
 };
 
-NANOGUI_NAMESPACE_END
+NAMESPACE_END(nanogui)

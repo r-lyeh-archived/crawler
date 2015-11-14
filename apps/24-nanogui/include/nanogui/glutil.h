@@ -1,10 +1,23 @@
+/*
+    nanogui/glutil.h -- Convenience classes for accessing OpenGL >= 3.x
+
+    NanoGUI was developed by Wenzel Jakob <wenzel@inf.ethz.ch>.
+    The widget drawing code is based on the NanoVG demo application
+    by Mikko Mononen.
+
+    All rights reserved. Use of this source code is governed by a
+    BSD-style license that can be found in the LICENSE.txt file.
+*/
+
 #pragma once
 
 #include <nanogui/opengl.h>
 #include <Eigen/Geometry>
 #include <map>
 
-NANOGUI_NAMESPACE_BEGIN
+namespace half_float { class half; }
+
+NAMESPACE_BEGIN(nanogui)
 
 using Eigen::Quaternionf;
 
@@ -17,6 +30,7 @@ template <> struct type_traits<uint8_t> { enum { type = GL_UNSIGNED_BYTE, integr
 template <> struct type_traits<int8_t> { enum { type = GL_BYTE, integral = 1 }; };
 template <> struct type_traits<double> { enum { type = GL_DOUBLE, integral = 0 }; };
 template <> struct type_traits<float> { enum { type = GL_FLOAT, integral = 0 }; };
+template <> struct type_traits<half_float::half> { enum { type = GL_HALF_FLOAT, integral = 0 }; };
 
 /**
  * Helper class for compiling and linking OpenGL shaders and uploading
@@ -64,8 +78,8 @@ public:
         GLuint glType = (GLuint) type_traits<typename Matrix::Scalar>::type;
         bool integral = (bool) type_traits<typename Matrix::Scalar>::integral;
 
-        uploadAttrib(name, M.size(), M.rows(), compSize,
-                glType, integral, (const uint8_t *) M.data(), version);
+        uploadAttrib(name, (uint32_t) M.size(), (int) M.rows(), compSize,
+                     glType, integral, (const uint8_t *) M.data(), version);
     }
 
     /// Download a vertex buffer object into an Eigen matrix
@@ -89,7 +103,7 @@ public:
     }
 
     /// Invalidate the version numbers assiciated with attribute data
-    void invalidateAttribss();
+    void invalidateAttribs();
 
     /// Completely free an existing attribute buffer
     void freeAttrib(const std::string &name);
@@ -322,4 +336,4 @@ extern NANOGUI_EXPORT Matrix4f scale(const Matrix4f &m, const Vector3f &v);
 
 extern NANOGUI_EXPORT Matrix4f translate(const Matrix4f &m, const Vector3f &v);
 
-NANOGUI_NAMESPACE_END
+NAMESPACE_END(nanogui)

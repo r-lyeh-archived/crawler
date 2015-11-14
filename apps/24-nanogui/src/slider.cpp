@@ -1,11 +1,24 @@
+/*
+    nanogui/slider.cpp -- Fractional slider widget with mouse control
+
+    NanoGUI was developed by Wenzel Jakob <wenzel@inf.ethz.ch>.
+    The widget drawing code is based on the NanoVG demo application
+    by Mikko Mononen.
+
+    All rights reserved. Use of this source code is governed by a
+    BSD-style license that can be found in the LICENSE.txt file.
+*/
+
 #include <nanogui/slider.h>
 #include <nanogui/theme.h>
 #include <nanogui/opengl.h>
 
-NANOGUI_NAMESPACE_BEGIN
+NAMESPACE_BEGIN(nanogui)
 
 Slider::Slider(Widget *parent)
-    : Widget(parent), mValue(0.0f), mUnsafeRange(std::make_pair(0.f, 0.f)) {}
+    : Widget(parent), mValue(0.0f), mHighlightedRange(std::make_pair(0.f, 0.f)) {
+    mHighlightColor = Color(255, 80, 80, 70);
+}
 
 Vector2i Slider::preferredSize(NVGcontext *) const {
     return Vector2i(70, 12);
@@ -44,10 +57,10 @@ void Slider::draw(NVGcontext* ctx) {
     nvgFillPaint(ctx, bg);
     nvgFill(ctx);
 
-    if (mUnsafeRange.second != mUnsafeRange.first) {
+    if (mHighlightedRange.second != mHighlightedRange.first) {
         nvgBeginPath(ctx);
-        nvgRoundedRect(ctx, mPos.x() + mUnsafeRange.first * mSize.x(), center.y() - 3 + 1, mSize.x() * (mUnsafeRange.second-mUnsafeRange.first), 6, 2);
-        nvgFillColor(ctx, nvgRGBA(255, 80, 80, 70));
+        nvgRoundedRect(ctx, mPos.x() + mHighlightedRange.first * mSize.x(), center.y() - 3 + 1, mSize.x() * (mHighlightedRange.second-mHighlightedRange.first), 6, 2);
+        nvgFillColor(ctx, mHighlightColor);
         nvgFill(ctx);
     }
 
@@ -83,4 +96,4 @@ void Slider::draw(NVGcontext* ctx) {
     nvgFill(ctx);
 }
 
-NANOGUI_NAMESPACE_END
+NAMESPACE_END(nanogui)

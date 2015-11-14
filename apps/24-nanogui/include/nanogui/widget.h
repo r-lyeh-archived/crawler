@@ -1,9 +1,20 @@
+/*
+    nanogui/widget.h -- Base class of all widgets
+
+    NanoGUI was developed by Wenzel Jakob <wenzel@inf.ethz.ch>.
+    The widget drawing code is based on the NanoVG demo application
+    by Mikko Mononen.
+
+    All rights reserved. Use of this source code is governed by a
+    BSD-style license that can be found in the LICENSE.txt file.
+*/
+
 #pragma once
 
-#include <nanogui/common.h>
+#include <nanogui/object.h>
 #include <vector>
 
-NANOGUI_NAMESPACE_BEGIN
+NAMESPACE_BEGIN(nanogui)
 
 enum class Cursor;
 
@@ -14,13 +25,10 @@ enum class Cursor;
  * also be used as an panel to arrange an arbitrary number of child
  * widgets using a layout generator (see \ref Layout).
  */
-class NANOGUI_EXPORT Widget {
+class NANOGUI_EXPORT Widget : public Object {
 public:
     /// Construct a new widget with the given parent widget
     Widget(Widget *parent);
-
-    /// Free all resources used by the widget and any children
-    virtual ~Widget();
 
     /// Return the parent widget
     Widget *parent() { return mParent; }
@@ -29,15 +37,17 @@ public:
     /// Set the parent widget
     void setParent(Widget *parent) { mParent = parent; }
 
-    /// Return thely used \ref Layout generator
+    /// Return the used \ref Layout generator
     Layout *layout() { return mLayout; }
     /// Return the used \ref Layout generator
-    const Layout *layout() const { return mLayout; }
+    const Layout *layout() const { return mLayout.get(); }
     /// Set the used \ref Layout generator
     void setLayout(Layout *layout) { mLayout = layout; }
 
     /// Return the \ref Theme used to draw this widget
-    const Theme *theme() const { return mTheme; }
+    Theme *theme() { return mTheme; }
+    /// Return the \ref Theme used to draw this widget
+    const Theme *theme() const { return mTheme.get(); }
     /// Set the \ref Theme used to draw this widget
     void setTheme(Theme *theme) { mTheme = theme; }
 
@@ -81,6 +91,10 @@ public:
     /// Return the fixed size (see \ref setFixedSize())
     const Vector2i &fixedSize() const { return mFixedSize; }
 
+    // Return the fixed width (see \ref setFixedSize())
+    int fixedWidth() const { return mFixedSize.x(); }
+    // Return the fixed height (see \ref setFixedSize())
+    int fixedHeight() const { return mFixedSize.y(); }
     /// Set the fixed width (see \ref setFixedSize())
     void setFixedWidth(int width) { mFixedSize.x() = width; }
     /// Set the fixed height (see \ref setFixedSize())
@@ -102,8 +116,9 @@ public:
         return visible;
     }
 
-    /// Return the list of child widgets of the current widget
-    std::vector<Widget *> &children() { return mChildren; }
+    /// Return the number of child widgets
+    int childCount() const { return (int) mChildren.size(); }
+
     /// Return the list of child widgets of the current widget
     const std::vector<Widget *> &children() const { return mChildren; }
 
@@ -115,6 +130,12 @@ public:
      * adds the current widget to its parent
      */
     void addChild(Widget *widget);
+
+    /// Remove a child widget by index
+    void removeChild(int index);
+
+    /// Remove a child widget by value
+    void removeChild(const Widget *widget);
 
     // Walk up the hierarchy and return the parent window
     Window *window();
@@ -133,6 +154,8 @@ public:
     bool focused() const { return mFocused; }
     /// Set whether or not this widget is currently focused
     void setFocused(bool focused) { mFocused = focused; }
+    /// Request the focus to be moved to this widget
+    void requestFocus();
 
     const std::string &tooltip() const { return mTooltip; }
     void setTooltip(const std::string &tooltip) { mTooltip = tooltip; }
@@ -141,17 +164,13 @@ public:
     int fontSize() const;
     /// Set the font size of this widget
     void setFontSize(int fontSize) { mFontSize = fontSize; }
+    /// Return whether the font size is explicitly specified for this widget
+    bool hasFontSize() const { return mFontSize > 0; }
 
     /// Return a pointer to the cursor of the widget
     Cursor cursor() const { return mCursor; }
     /// Set the cursor of the widget
     void setCursor(Cursor cursor) { mCursor = cursor; }
-
-    /// Compute the preferred size of the widget
-    virtual Vector2i preferredSize(NVGcontext *ctx) const;
-
-    /// Invoke the associated layout generator to properly place child widgets, if any
-    virtual void performLayout(NVGcontext *ctx);
 
     /// Check if the widget contains a certain position
     bool contains(const Vector2i &p) const {
@@ -168,14 +187,14 @@ public:
     /// Handle a mouse motion event (default implementation: propagate to children)
     virtual bool mouseMotionEvent(const Vector2i &p, const Vector2i &rel, int button, int modifiers);
 
-    /// Handle a mouse scroll event (default implementation: propagate to children)
-    virtual bool scrollEvent(const Vector2i &p, const Vector2f &rel);
-
     /// Handle a mouse drag event (default implementation: do nothing)
     virtual bool mouseDragEvent(const Vector2i &p, const Vector2i &rel, int button, int modifiers);
 
     /// Handle a mouse enter/leave event (default implementation: record this fact, but do nothing)
     virtual bool mouseEnterEvent(const Vector2i &p, bool enter);
+
+    /// Handle a mouse scroll event (default implementation: propagate to children)
+    virtual bool scrollEvent(const Vector2i &p, const Vector2f &rel);
 
     /// Handle a focus change event (default implementation: record the focus status, but do nothing)
     virtual bool focusEvent(bool focused);
@@ -184,18 +203,25 @@ public:
     virtual bool keyboardEvent(int key, int scancode, int action, int modifiers);
 
     /// Handle text input (UTF-32 format) (default implementation: do nothing)
-    virtual bool keyboardEvent(unsigned int codepoint);
+    virtual bool keyboardCharacterEvent(unsigned int codepoint);
 
-    /// Request the focus to be moved to this widget
-    virtual void requestFocus();
+    /// Compute the preferred size of the widget
+    virtual Vector2i preferredSize(NVGcontext *ctx) const;
+
+    /// Invoke the associated layout generator to properly place child widgets, if any
+    virtual void performLayout(NVGcontext *ctx);
 
     /// Draw the widget (and all child widgets)
     virtual void draw(NVGcontext *ctx);
 
 protected:
+    /// Free all resources used by the widget and any children
+    virtual ~Widget();
+
+protected:
     Widget *mParent;
-    Theme *mTheme;
-    Layout *mLayout;
+    ref<Theme> mTheme;
+    ref<Layout> mLayout;
     std::string mId;
     Vector2i mPos, mSize, mFixedSize;
     std::vector<Widget *> mChildren;
@@ -206,4 +232,4 @@ protected:
     Cursor mCursor;
 };
 
-NANOGUI_NAMESPACE_END
+NAMESPACE_END(nanogui)

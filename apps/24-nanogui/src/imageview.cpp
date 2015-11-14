@@ -1,10 +1,22 @@
+/*
+    src/imageview.cpp -- Simple widget which shows an image that was
+    previously uploaded to the graphics card
+
+    NanoGUI was developed by Wenzel Jakob <wenzel@inf.ethz.ch>.
+    The widget drawing code is based on the NanoVG demo application
+    by Mikko Mononen.
+
+    All rights reserved. Use of this source code is governed by a
+    BSD-style license that can be found in the LICENSE.txt file.
+*/
+
 #include <nanogui/imageview.h>
 #include <nanogui/opengl.h>
 
-NANOGUI_NAMESPACE_BEGIN
+NAMESPACE_BEGIN(nanogui)
 
-ImageView::ImageView(Widget *parent)
-    : Widget(parent) {}
+ImageView::ImageView(Widget *parent, int img, SizePolicy policy)
+    : Widget(parent), mImage(img), mPolicy(policy) {}
 
 Vector2i ImageView::preferredSize(NVGcontext *ctx) const {
     if (!mImage)
@@ -23,14 +35,26 @@ void ImageView::draw(NVGcontext* ctx) {
     int w, h;
     nvgImageSize(ctx, mImage, &w, &h);
 
-    if (s.x() < w) {
+    if (mPolicy == SizePolicy::Fixed) {
+        if (s.x() < w) {
+            h = (int) std::round(h * (float) s.x() / w);
+            w = s.x();
+        }
+
+        if (s.y() < h) {
+            w = (int) std::round(w * (float) s.y() / h);
+            h = s.y();
+        }
+    } else {    // mPolicy == Expand
+        // expand to width
         h = (int) std::round(h * (float) s.x() / w);
         w = s.x();
-    }
 
-    if (s.y() < h) {
-        w = (int) std::round(w * (float) s.y() / h);
-        h = s.y();
+        // shrink to height, if necessary
+        if (s.y() < h) {
+            w = (int) std::round(w * (float) s.y() / h);
+            h = s.y();
+        }
     }
 
     NVGpaint imgPaint = nvgImagePattern(ctx, p.x(), p.y(), w, h, 0, mImage, 1.0);
@@ -41,4 +65,4 @@ void ImageView::draw(NVGcontext* ctx) {
     nvgFill(ctx);
 }
 
-NANOGUI_NAMESPACE_END
+NAMESPACE_END(nanogui)

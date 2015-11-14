@@ -429,6 +429,15 @@ end
             os.is("linux")   and "libs/ui/nativefiledialog/src/nfd_gtk.c"   or "",
         }
 
+    project "tfd" -- tiny file dialogs
+        language "C"
+        includedirs {
+            "libs/ui/tinyfiledialogs/",
+        }
+        files {
+            "libs/ui/tinyfiledialogs/*.c",
+        }
+
     -- AUDIO
 
     project "soloud"
@@ -591,6 +600,29 @@ end
         files {
             "libs/physics/bullet2/**.h",
             "libs/physics/bullet2/**.cpp",
+        }
+
+    project "box2d"
+        kind "StaticLib"
+        language "C++"
+        includedirs {
+            "libs/physics/box2d/Box2D/",
+        }
+        files {
+            "libs/physics/box2d/Box2D/**.h",
+            "libs/physics/box2d/Box2D/**.cpp",
+        }
+
+    -- COMPRESSION
+    project "miniz"
+        kind "StaticLib"
+        language "C"
+        includedirs {
+            "libs/compression/miniz/",
+        }
+        files {
+            "libs/compression/miniz/*.h",
+            "libs/compression/miniz/*.c",
         }
 
     -- ANIMATION
@@ -834,11 +866,17 @@ end
 
                 "libs/physics/bullet2/",
                 "libs/physics/bullet3/src/",
+                "libs/physics/box2d/Box2D/",
+
+                "libs/compression/miniz/",
 
                 "libs/databases/sqlite3/",
 
                 "libs/extensions/glxw/include/",
                 "libs/frameworks/glwt/include/",
+
+                "libs/ui/nativefiledialog/",
+                "libs/ui/tinyfiledialogs/",
             }
 
             libdirs {
@@ -876,6 +914,7 @@ end
                 lib("glwt"),
 
                 lib("bullet"),
+                lib("box2d"),
 
                 lib("sqlite3"),
 
@@ -889,7 +928,10 @@ end
 
                 lib("assimp"),
 
+                lib("miniz"),
+
                 lib("nfd"),
+                lib("tfd"),
             }
 
             defines {

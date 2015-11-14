@@ -1,8 +1,19 @@
+/*
+    nanogui/graph.h -- Simple graph widget for showing a function plot
+
+    NanoGUI was developed by Wenzel Jakob <wenzel@inf.ethz.ch>.
+    The widget drawing code is based on the NanoVG demo application
+    by Mikko Mononen.
+
+    All rights reserved. Use of this source code is governed by a
+    BSD-style license that can be found in the LICENSE.txt file.
+*/
+
 #pragma once
 
 #include <nanogui/widget.h>
 
-NANOGUI_NAMESPACE_BEGIN
+NAMESPACE_BEGIN(nanogui)
 
 class NANOGUI_EXPORT Graph : public Widget {
 public:
@@ -26,16 +37,16 @@ public:
     const Color &textColor() const { return mTextColor; }
     void setTextColor(const Color &textColor) { mTextColor = textColor; }
 
-    const Eigen::VectorXf &values() const { return mValues; }
-    Eigen::VectorXf &values() { return mValues; }
-    void setValues(const Eigen::VectorXf &values) { mValues = values; }
+    const VectorXf &values() const { return mValues; }
+    VectorXf &values() { return mValues; }
+    void setValues(const VectorXf &values) { mValues = values; }
 
     virtual Vector2i preferredSize(NVGcontext *ctx) const;
     virtual void draw(NVGcontext *ctx);
 protected:
     std::string mCaption, mHeader, mFooter;
     Color mBackgroundColor, mForegroundColor, mTextColor;
-    Eigen::VectorXf mValues;
+    VectorXf mValues;
 };
 
-NANOGUI_NAMESPACE_END
+NAMESPACE_END(nanogui)

@@ -1,12 +1,25 @@
+/*
+    src/colorwheel.cpp -- fancy analog widget to select a color value
+
+    This widget was contributed by Dmitriy Morozov.
+
+    NanoGUI was developed by Wenzel Jakob <wenzel@inf.ethz.ch>.
+    The widget drawing code is based on the NanoVG demo application
+    by Mikko Mononen.
+
+    All rights reserved. Use of this source code is governed by a
+    BSD-style license that can be found in the LICENSE.txt file.
+*/
+
 #include <nanogui/colorwheel.h>
 #include <nanogui/theme.h>
 #include <nanogui/opengl.h>
 #include <Eigen/QR>
 #include <Eigen/Geometry>
 
-NANOGUI_NAMESPACE_BEGIN
+NAMESPACE_BEGIN(nanogui)
 
-ColorWheel::ColorWheel(Widget *parent, const Vector3f& rgb)
+ColorWheel::ColorWheel(Widget *parent, const Color& rgb)
     : Widget(parent), mDragRegion(None) {
     setColor(rgb);
 }
@@ -16,6 +29,8 @@ Vector2i ColorWheel::preferredSize(NVGcontext *) const {
 }
 
 void ColorWheel::draw(NVGcontext *ctx) {
+    Widget::draw(ctx);
+
     if (!mVisible)
         return;
 
@@ -141,7 +156,7 @@ bool ColorWheel::mouseButtonEvent(const Vector2i &p, int button, bool down,
 
 bool ColorWheel::mouseDragEvent(const Vector2i &p, const Vector2i &,
                                 int, int) {
-    return adjustPosition(p, mDragRegion);
+    return adjustPosition(p, mDragRegion) != None;
 }
 
 ColorWheel::Region ColorWheel::adjustPosition(const Vector2i &p, Region consideredRegions) {
@@ -160,7 +175,8 @@ ColorWheel::Region ColorWheel::adjustPosition(const Vector2i &p, Region consider
 
     float mr = std::sqrt(x*x + y*y);
 
-    if ((mr >= r0 && mr <= r1) || (consideredRegions == OuterCircle)) {
+    if ((consideredRegions & OuterCircle) &&
+        ((mr >= r0 && mr <= r1) || (consideredRegions == OuterCircle))) {
         if (!(consideredRegions & OuterCircle))
             return None;
         mHue = std::atan(y / x);
@@ -195,10 +211,19 @@ ColorWheel::Region ColorWheel::adjustPosition(const Vector2i &p, Region consider
 
     Vector2f bary = T.colPivHouseholderQr().solve(pos);
     float l0 = bary[0], l1 = bary[1], l2 = 1 - l0 - l1;
+    bool triangleTest = l0 >= 0 && l0 <= 1.f && l1 >= 0.f && l1 <= 1.f &&
+                        l2 >= 0.f && l2 <= 1.f;
 
-    if (l0 >= 0 && l0 <= 1.f && l1 >= 0.f && l1 <= 1.f && l2 >= 0.f && l2 <= 1.f) {
+    if ((consideredRegions & InnerTriangle) &&
+        (triangleTest || consideredRegions == InnerTriangle)) {
         if (!(consideredRegions & InnerTriangle))
             return None;
+        l0 = std::min(std::max(0.f, l0), 1.f);
+        l1 = std::min(std::max(0.f, l1), 1.f);
+        l2 = std::min(std::max(0.f, l2), 1.f);
+        float sum = l0 + l1 + l2;
+        l0 /= sum;
+        l1 /= sum;
         mWhite = l0;
         mBlack = l1;
         if (mCallback)
@@ -209,9 +234,8 @@ ColorWheel::Region ColorWheel::adjustPosition(const Vector2i &p, Region consider
     return None;
 }
 
-Vector3f ColorWheel::hue2rgb(float h) const {
+Color ColorWheel::hue2rgb(float h) const {
     float s = 1., v = 1.;
-    float r,g,b;
 
     if (h < 0) h += 1;
 
@@ -221,6 +245,7 @@ Vector3f ColorWheel::hue2rgb(float h) const {
     float q = v * (1 - f * s);
     float t = v * (1 - (1 - f) * s);
 
+    float r = 0, g = 0, b = 0;
     switch (i % 6) {
         case 0: r = v, g = t, b = p; break;
         case 1: r = q, g = v, b = p; break;
@@ -230,30 +255,30 @@ Vector3f ColorWheel::hue2rgb(float h) const {
         case 5: r = v, g = p, b = q; break;
     }
 
-    return { r, g, b };
+    return { r, g, b, 1.f };
 }
 
-Vector3f ColorWheel::color() const {
-    Vector3f rgb    = hue2rgb(mHue);
-    Vector3f black  { 0.f, 0.f, 0.f };
-    Vector3f white  { 1.f, 1.f, 1.f };
+Color ColorWheel::color() const {
+    Color rgb    = hue2rgb(mHue);
+    Color black  { 0.f, 0.f, 0.f, 1.f };
+    Color white  { 1.f, 1.f, 1.f, 1.f };
     return rgb * (1 - mWhite - mBlack) + black * mBlack + white * mWhite;
 }
 
-void ColorWheel::setColor(const Vector3f &rgb) {
+void ColorWheel::setColor(const Color &rgb) {
     float r = rgb[0], g = rgb[1], b = rgb[2];
 
     float max = std::max({ r, g, b });
     float min = std::min({ r, g, b });
-    float h, s, l = (max + min) / 2;
+    float l = (max + min) / 2;
 
     if (max == min) {
         mHue = 0.;
         mBlack = 1. - l;
         mWhite = l;
     } else {
-        float d = max - min;
-        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        float d = max - min, h;
+        /* float s = l > 0.5 ? d / (2 - max - min) : d / (max + min); */
         if (max == r)
             h = (g - b) / d + (g < b ? 6 : 0);
         else if (max == g)
@@ -265,7 +290,7 @@ void ColorWheel::setColor(const Vector3f &rgb) {
         mHue = h;
 
         Eigen::Matrix<float, 4, 3> M;
-        M.topLeftCorner<3, 1>() = hue2rgb(h);
+        M.topLeftCorner<3, 1>() = hue2rgb(h).head<3>();
         M(3, 0) = 1.;
         M.col(1) = Vector4f{ 0., 0., 0., 1. };
         M.col(2) = Vector4f{ 1., 1., 1., 1. };
@@ -278,5 +303,5 @@ void ColorWheel::setColor(const Vector3f &rgb) {
     }
 }
 
-NANOGUI_NAMESPACE_END
+NAMESPACE_END(nanogui)
 

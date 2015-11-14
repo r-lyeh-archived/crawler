@@ -1,9 +1,20 @@
+/*
+    src/checkbox.cpp -- Two-state check box widget
+
+    NanoGUI was developed by Wenzel Jakob <wenzel@inf.ethz.ch>.
+    The widget drawing code is based on the NanoVG demo application
+    by Mikko Mononen.
+
+    All rights reserved. Use of this source code is governed by a
+    BSD-style license that can be found in the LICENSE.txt file.
+*/
+
 #include <nanogui/checkbox.h>
 #include <nanogui/opengl.h>
 #include <nanogui/theme.h>
 #include <nanogui/entypo.h>
 
-NANOGUI_NAMESPACE_BEGIN
+NAMESPACE_BEGIN(nanogui)
 
 CheckBox::CheckBox(Widget *parent, const std::string &caption,
                    const std::function<void(bool) > &callback)
@@ -39,8 +50,8 @@ Vector2i CheckBox::preferredSize(NVGcontext *ctx) const {
     nvgFontFace(ctx, "sans");
     return Vector2i(
         nvgTextBounds(ctx, 0, 0, mCaption.c_str(), nullptr, nullptr) +
-            1.7 * fontSize(),
-        fontSize());
+            1.7f * fontSize(),
+        fontSize() * 1.3f);
 }
 
 void CheckBox::draw(NVGcontext *ctx) {
@@ -77,4 +88,4 @@ void CheckBox::draw(NVGcontext *ctx) {
     }
 }
 
-NANOGUI_NAMESPACE_END
+NAMESPACE_END(nanogui)

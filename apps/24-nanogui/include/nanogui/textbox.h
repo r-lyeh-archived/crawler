@@ -1,8 +1,23 @@
+/*
+    nanogui/textbox.h -- Fancy text box with builtin regular
+    expression-based validation
+
+    The text box widget was contributed by Christian Schueller.
+
+    NanoGUI was developed by Wenzel Jakob <wenzel@inf.ethz.ch>.
+    The widget drawing code is based on the NanoVG demo application
+    by Mikko Mononen.
+
+    All rights reserved. Use of this source code is governed by a
+    BSD-style license that can be found in the LICENSE.txt file.
+*/
+
 #pragma once
 
 #include <nanogui/widget.h>
+#include <sstream>
 
-NANOGUI_NAMESPACE_BEGIN
+NAMESPACE_BEGIN(nanogui)
 
 class NANOGUI_EXPORT TextBox : public Widget {
 public:
@@ -14,7 +29,7 @@ public:
 
     TextBox(Widget *parent, const std::string &value = "Untitled");
 
-    bool isEditable() const { return mEditable; }
+    bool editable() const { return mEditable; }
     void setEditable(bool editable);
 
     const std::string &value() const { return mValue; }
@@ -29,25 +44,25 @@ public:
     const std::string &units() const { return mUnits; }
     void setUnits(const std::string &units) { mUnits = units; }
 
+    int unitsImage() const { return mUnitsImage; }
+    void setUnitsImage(int image) { mUnitsImage = image; }
+
     /// Return the underlying regular expression specifying valid formats
     const std::string &format() const { return mFormat; }
     /// Specify a regular expression specifying valid formats
     void setFormat(const std::string &format) { mFormat = format; }
 
-    int unitsImage() const { return mUnitsImage; }
-    void setUnitsImage(int image) { mUnitsImage = image; }
-
     /// Set the change callback
     std::function<bool(const std::string& str)> callback() const { return mCallback; }
-    void setCallback(std::function<bool(const std::string& str)> callback) { mCallback = callback; }
+    void setCallback(const std::function<bool(const std::string& str)> &callback) { mCallback = callback; }
 
     bool mouseButtonEvent(const Vector2i &p,int button,bool down,int modifiers);
     bool mouseMotionEvent(const Vector2i &p,const Vector2i &rel,int button,int modifiers);
     bool mouseDragEvent(const Vector2i &p,const Vector2i &rel,int button,int modifiers);
     bool mouseEnterEvent(const Vector2i &p,bool enter);
     bool focusEvent(bool focused);
-    bool keyboardEvent(int key,int scancode,int action,int modifiers);
-    bool keyboardEvent(unsigned int codepoint);
+    bool keyboardEvent(int key, int scancode, int action, int modifiers);
+    bool keyboardCharacterEvent(unsigned int codepoint);
 
     Vector2i preferredSize(NVGcontext *ctx) const;
     void draw(NVGcontext* ctx);
@@ -73,7 +88,6 @@ protected:
     std::string mFormat;
     int mUnitsImage;
     std::function<bool(const std::string& str)> mCallback;
-
     bool mValidFormat;
     std::string mValueTemp;
     int mCursorPos;
@@ -83,6 +97,70 @@ protected:
     Vector2i mMouseDragPos;
     int mMouseDownModifier;
     float mTextOffset;
+    double mLastClick;
 };
 
-NANOGUI_NAMESPACE_END
+template <typename Scalar> class IntBox : public TextBox {
+public:
+    IntBox(Widget *parent, Scalar value = (Scalar) 0) : TextBox(parent) {
+        setDefaultValue("0");
+        setFormat(std::is_signed<Scalar>::value ? "[-]?[0-9]*" : "[0-9]*");
+        setValue(value);
+    }
+
+    Scalar value() const {
+        Scalar value;
+        std::istringstream iss(TextBox::value());
+        if (!(iss >> value))
+            throw std::invalid_argument("Could not parse integer value!");
+        return value;
+    }
+
+    void setValue(Scalar value) {
+        TextBox::setValue(std::to_string(value));
+    }
+
+    void setCallback(const std::function<void(Scalar)> &cb) {
+        TextBox::setCallback(
+            [cb](const std::string &str) {
+                std::istringstream iss(str);
+                Scalar value;
+                if (!(iss >> value))
+                    throw std::invalid_argument("Could not parse integer value!");
+                cb(value);
+                return true;
+            }
+        );
+    }
+};
+
+template <typename Scalar> class FloatBox : public TextBox {
+public:
+    FloatBox(Widget *parent, Scalar value = (Scalar) 0.f) : TextBox(parent) {
+        setDefaultValue("0");
+        setFormat("[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?");
+        setValue(value);
+    }
+
+    Scalar value() const {
+        return (Scalar) std::stod(TextBox::value());
+    }
+
+    void setValue(Scalar value) {
+        char buffer[30];
+#ifdef _MSC_VER
+        _snprintf
+#else
+        snprintf
+#endif
+        (buffer, 30, sizeof(Scalar) == sizeof(float) ? "%.4g" : "%.7g", value);
+        TextBox::setValue(buffer);
+    }
+
+    void setCallback(const std::function<void(Scalar)> &cb) {
+        TextBox::setCallback(
+            [cb](const std::string &str) { cb((Scalar) std::stod(str)); return true; });
+    }
+};
+
+NAMESPACE_END(nanogui)

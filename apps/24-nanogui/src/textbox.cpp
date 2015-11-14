@@ -1,3 +1,17 @@
+/*
+    src/textbox.cpp -- Fancy text box with builtin regular
+    expression-based validation
+
+    The text box widget was contributed by Christian Schueller.
+
+    NanoGUI was developed by Wenzel Jakob <wenzel@inf.ethz.ch>.
+    The widget drawing code is based on the NanoVG demo application
+    by Mikko Mononen.
+
+    All rights reserved. Use of this source code is governed by a
+    BSD-style license that can be found in the LICENSE.txt file.
+*/
+
 #include <nanogui/window.h>
 #include <nanogui/screen.h>
 #include <nanogui/textbox.h>
@@ -5,7 +19,7 @@
 #include <nanogui/theme.h>
 #include <regex>
 
-NANOGUI_NAMESPACE_BEGIN
+NAMESPACE_BEGIN(nanogui)
 
 TextBox::TextBox(Widget *parent,const std::string &value)
     : Widget(parent),
@@ -15,7 +29,7 @@ TextBox::TextBox(Widget *parent,const std::string &value)
       mDefaultValue(""),
       mAlignment(Alignment::Center),
       mUnits(""),
-      mFormat(".*"),
+      mFormat(""),
       mUnitsImage(-1),
       mValidFormat(true),
       mValueTemp(value),
@@ -25,13 +39,14 @@ TextBox::TextBox(Widget *parent,const std::string &value)
       mMouseDownPos(Vector2i(-1,-1)),
       mMouseDragPos(Vector2i(-1,-1)),
       mMouseDownModifier(0),
-      mTextOffset(0) { }
+      mTextOffset(0),
+      mLastClick(0) {
+    mFontSize = mTheme->mTextBoxFontSize;
+}
 
 void TextBox::setEditable(bool editable) {
     mEditable = editable;
-
-    if (mEditable)
-        setCursor(Cursor::IBeam);
+    setCursor(editable ? Cursor::IBeam : Cursor::Arrow);
 }
 
 Vector2i TextBox::preferredSize(NVGcontext *ctx) const {
@@ -218,10 +233,19 @@ bool TextBox::mouseButtonEvent(const Vector2i &p, int button, bool down,
                                int modifiers) {
     Widget::mouseButtonEvent(p, button, down, modifiers);
 
-    if (mEditable && focused()) {
+    if (mEditable && focused() && button == GLFW_MOUSE_BUTTON_1) {
         if (down) {
-            mMouseDownPos = p + Vector2i(5, 5); // correct for ibeam cursor;
+            mMouseDownPos = p;
             mMouseDownModifier = modifiers;
+
+            double time = glfwGetTime();
+            if (time - mLastClick < 0.25) {
+                /* Double-click: select all text */
+                mSelectionPos = 0;
+                mCursorPos = (int) mValueTemp.size();
+                mMouseDownPos = Vector2i(-1, 1);
+            }
+            mLastClick = time;
         } else {
             mMouseDownPos = Vector2i(-1, -1);
             mMouseDragPos = Vector2i(-1, -1);
@@ -235,7 +259,7 @@ bool TextBox::mouseButtonEvent(const Vector2i &p, int button, bool down,
 bool TextBox::mouseMotionEvent(const Vector2i &p, const Vector2i & /* rel */,
                                int /* button */, int /* modifiers */) {
     if (mEditable && focused()) {
-        mMousePos = p + Vector2i(5, 5); // correct for ibeam cursor
+        mMousePos = p;
         return true;
     }
     return false;
@@ -244,7 +268,7 @@ bool TextBox::mouseMotionEvent(const Vector2i &p, const Vector2i & /* rel */,
 bool TextBox::mouseDragEvent(const Vector2i &p, const Vector2i &/* rel */,
                              int /* button */, int /* modifiers */) {
     if (mEditable && focused()) {
-        mMouseDragPos = p + Vector2i(5, 5); // correct for ibeam cursor
+        mMouseDragPos = p;
         return true;
     }
     return false;
@@ -329,7 +353,7 @@ bool TextBox::keyboardEvent(int key, int /* scancode */, int action, int modifie
                     mSelectionPos = -1;
                 }
 
-                mCursorPos = mValueTemp.size();
+                mCursorPos = (int) mValueTemp.size();
             } else if (key == GLFW_KEY_BACKSPACE) {
                 if (!deleteSelection()) {
                     if (mCursorPos > 0) {
@@ -368,7 +392,7 @@ bool TextBox::keyboardEvent(int key, int /* scancode */, int action, int modifie
     return false;
 }
 
-bool TextBox::keyboardEvent(unsigned int codepoint) {
+bool TextBox::keyboardCharacterEvent(unsigned int codepoint) {
     if (mEditable && focused()) {
         std::ostringstream convert;
         convert << (char) codepoint;
@@ -386,6 +410,8 @@ bool TextBox::keyboardEvent(unsigned int codepoint) {
 }
 
 bool TextBox::checkFormat(const std::string &input, const std::string &format) {
+    if (format.empty())
+        return true;
     std::regex regex(format);
     return regex_match(input, regex);
 }
@@ -493,4 +519,4 @@ int TextBox::position2CursorIndex(float posx, float lastx,
     return mCursorId;
 }
 
-NANOGUI_NAMESPACE_END
+NAMESPACE_END(nanogui)
